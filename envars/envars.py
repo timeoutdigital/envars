@@ -163,7 +163,7 @@ def validate(args):
             errors.append(f'var name "{var.name}" is not uppercase')
 
         for env in var.envs:
-            if env == 'default':
+            if env in ['default', 'description']:
                 pass
             elif env not in envars.envs:
                 errors.append(f'"{var.name}" has unknown env "{env}"')
