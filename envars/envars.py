@@ -199,7 +199,7 @@ def print_env(args):
         if args.yaml:
             print(
                 yaml.dump(
-                    envars.build_env(args.env, account, decrypt=args.decrypt),
+                    {'envars': envars.build_env(args.env, account, decrypt=args.decrypt)},
                     default_flow_style=False,
                 )
             )
