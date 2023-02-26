@@ -6,7 +6,7 @@ from botocore.exceptions import NoRegionError
 
 class KMSAgent(object):
 
-    key_id = 'alias/treehugger'
+    key_id = 'alias/envars'
 
     def __init__(self):
         self.cache = {}
