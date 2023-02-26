@@ -154,8 +154,35 @@ def execute():
     pass
 
 
-def validate():
-    pass
+def validate(args):
+    envars = EnVars(args.filename)
+    envars.load()
+    errors = []
+    for var in envars.envars:
+        if not var.name.isupper():
+            errors.append(f'var name "{var.name}" is not uppercase')
+
+        for env in var.envs:
+            if env == 'default':
+                pass
+            elif env not in envars.envs:
+                errors.append(f'"{var.name}" has unknown env "{env}"')
+
+            if var.envs[env] == '':
+                errors.append(f'"{var.name}" "{env}" has unsupported empty string')
+
+            if isinstance(var.envs[env], dict):
+                for account in var.envs[env]:
+                    if account not in ['master', 'sandbox']:
+                        errors.append(f'"{var.name}" "{env}" has invalid account "{account}"')
+
+                    if var.envs[env][account] == '':
+                        errors.append(f'"{var.name}" "{env}" "{account}" has unsupported empty string')
+
+    if errors:
+        for error in errors:
+            print(f'Error in devops/env_vars.yml: {error}')
+        sys.exit(1)
 
 
 def init(args):
