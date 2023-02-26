@@ -1,0 +1,6 @@
+argparse
+boto3
+jinja2
+pip-tools
+pre-commit
+pyyaml
