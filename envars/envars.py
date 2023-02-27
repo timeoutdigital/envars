@@ -48,7 +48,7 @@ def main():
     )
     parser_init.add_argument(
         '-e',
-        '--envs',
+        '--environments',
         required=True,
     )
     parser_init.set_defaults(func=init)
@@ -201,7 +201,7 @@ def validate(args):
 def init(args):
     envars = EnVars(args.filename)
     envars.app = args.app
-    envars.envs = args.envs.split(',')
+    envars.envs = args.environments.split(',')
     envars.save()
 
 
