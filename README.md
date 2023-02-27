@@ -36,7 +36,7 @@ Add a environment specific variable
 $ envars add --secret --var MYSECRET=ssssshh
 ```
 
-To print the variables for a specific environment 
+To print the variables for a specific environment
 
 ```
 $ envars print --decrypt --env prod
