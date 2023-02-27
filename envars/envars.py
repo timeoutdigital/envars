@@ -13,6 +13,7 @@ try:
 except ImportError:
     from collections import Iterable
 
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -239,8 +240,8 @@ def print_env(args):
             print(
                 yaml.dump(
                     {'envars': envars.build_env(
-                        args.env, 
-                        account, 
+                        args.env,
+                        account,
                         decrypt=args.decrypt,
                         template_vars=template_vars,
                     )},
@@ -249,8 +250,8 @@ def print_env(args):
             )
         else:
             for name, value in envars.build_env(
-                    args.env, 
-                    account, 
+                    args.env,
+                    account,
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
                 print(f'{name}={value}')
