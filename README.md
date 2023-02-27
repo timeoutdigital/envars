@@ -36,6 +36,6 @@ $ envars add --secret --var MYSECRET=ssssshh
 
 To generate the required environment
 
-``
+```
 $ envars print --decrypt --env prod > env
 ```
