@@ -12,9 +12,10 @@ phases:
   install:
     on-failure: ABORT
     commands:
-    - pip install pre-commit
+    - pip install pre-commit pytest
 
   build:
     on-failure: ABORT
     commands:
     - pre-commit run --all-files --show-diff-on-failure
+    - pytest
