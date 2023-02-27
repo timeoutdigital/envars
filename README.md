@@ -6,6 +6,8 @@ Command-line Python application to manage environment variables and AWS KMS encr
 
 Your AWS account should have a KMS key created with an alias of `alias/envars`.
 
+further reading at https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+
 ## Install
 
 ```
