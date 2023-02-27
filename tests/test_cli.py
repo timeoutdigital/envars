@@ -2,9 +2,11 @@ import subprocess
 
 import yaml
 
+CMD = 'python -m envars.envars'
+
 
 def run_cmd(tmp_path, cmd=None):
-    return subprocess.run(f'python -m envars.envars -f {tmp_path}/envars.yml {cmd}', shell=True)
+    return subprocess.run(f'{CMD} -f {tmp_path}/envars.yml {cmd}', shell=True)
 
 
 def test_help(tmp_path):
@@ -57,3 +59,19 @@ def test_add_invalid_account_fails(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --envs prod,staging')
     ret = run_cmd(tmp_path, 'add -a foo -v TEST=test')
     assert ret.returncode == 1
+
+
+def test_prod_account_value_returned(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --envs prod,staging')
+    run_cmd(tmp_path, 'add -v TEST=dtf')
+    run_cmd(tmp_path, 'add -a master -e prod -v TEST=prod-master')
+    run_cmd(tmp_path, 'add -a sandbox -e prod -v TEST=prod-sandbox')
+    ret = subprocess.run(f'{CMD} -f {tmp_path}/envars.yml print -e prod -a master', shell=True, capture_output=True)
+    assert ret.stdout.decode() == 'TEST=prod-master\n'
+
+
+def test_secret(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --envs prod,staging')
+    run_cmd(tmp_path, 'add -s -v TEST=sssssh')
+    ret = subprocess.run(f'{CMD} -f {tmp_path}/envars.yml print -d -e prod', shell=True, capture_output=True)
+    assert ret.stdout.decode() == 'TEST=sssssh\n'

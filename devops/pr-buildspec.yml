@@ -18,4 +18,4 @@ phases:
     on-failure: ABORT
     commands:
     - pre-commit run --all-files --show-diff-on-failure
-    - pytest
+    - pytest -v
