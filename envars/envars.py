@@ -8,6 +8,10 @@ import yaml
 
 from .models import EnVars
 
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 def main():
 
@@ -110,6 +114,14 @@ def main():
         required=False,
     )
     parser_print.add_argument(
+        '-t',
+        '--template-var',
+        required=False,
+        nargs='+',
+        action='append',
+        default=[],
+    )
+    parser_print.add_argument(
         '-v',
         '--var',
         required=False,
@@ -205,7 +217,7 @@ def add_var(args):
         desc=args.desc,
         is_secret=args.secret,
     )
-    envars.print(args.account, args.env, name)
+    envars.print(args.account, args.env, var=name)
     envars.save()
 
 
@@ -218,24 +230,44 @@ def print_env(args):
     else:
         account = args.account
 
-    # var = None
-    # if args.var:
-    #     var = args.var.upper()
-
     if args.env:
+        template_vars = {}
+        for tvar in flatten(args.template_var):
+            template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
+
         if args.yaml:
             print(
                 yaml.dump(
-                    {'envars': envars.build_env(args.env, account, decrypt=args.decrypt)},
-                    default_flow_style=False,
+                    {'envars': envars.build_env(
+                        args.env, 
+                        account, 
+                        decrypt=args.decrypt,
+                        template_vars=template_vars,
+                    )},
+                    default_flow_style=False
                 )
             )
         else:
             for name, value in envars.build_env(
-                    args.env, account, decrypt=args.decrypt).items():
+                    args.env, 
+                    account, 
+                    decrypt=args.decrypt,
+                    template_vars=template_vars).items():
                 print(f'{name}={value}')
     else:
-        envars.print(account, decrypt=args.decrypt)
+        var = None
+        if args.var:
+            var = args.var.upper()
+        envars.print(account, var=var, decrypt=args.decrypt)
+
+
+def flatten(lis):
+    for item in lis:
+        if isinstance(item, Iterable) and not isinstance(item, str):
+            for x in flatten(item):
+                yield x
+        else:
+            yield item
 
 
 def get_account():

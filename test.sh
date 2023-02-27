@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 CMD="python -m envars.envars"
 

@@ -183,23 +183,26 @@ class EnVars:
             envars[var.name] = var.envs
         return envars
 
-    def build_env(self, env, account, decrypt=False):
+    def build_env(self, env, account, decrypt=False, template_vars={}):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
         if env != 'default' and env not in self.envs:
             raise(Exception(f'Unknown Env: "{env}"'))
 
+        template_vars['STAGE'] = env
         # fetch all the non secret values
         for v in self.envars:
             value = v.get_value(env, account)
             if value and not isinstance(value, Secret):
+                if v.name not in template_vars.keys():
+                    template_vars[v.name] = value
                 envars[v.name] = value
 
         jenv = jinja2.Environment()
 
         # process jinja templates
         for var in envars:
-            envars[var] = jenv.from_string(envars[var]).render(envars)
+            envars[var] = jenv.from_string(envars[var]).render(template_vars)
 
         # fetch secrets
         for v in self.envars:
@@ -210,14 +213,16 @@ class EnVars:
 
         return envars
 
-    def build(self, account, decrypt=False):
-        logging.debug(f'build({account}, {decrypt})')
+    def build(self, account, var=None, decrypt=False):
+        logging.debug(f'build({account}, {var}, {decrypt})')
         envars = {}
         for v in self.envars:
+            if var and v.name != var:
+                continue
             envars[v.name] = v.envs
 
         return envars
 
-    def print(self, account, env=None, decrypt=False):
+    def print(self, account, env=None, var=None, decrypt=False):
         logging.debug(f'print({account}, {env}, {decrypt})')
-        print(yaml.dump(self.build(account, decrypt)))
+        print(yaml.dump(self.build(account, var, decrypt)))
