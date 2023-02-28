@@ -48,7 +48,7 @@ $ python -m envars.envars
 To create an envars.yml file
 
 ```
-$ envars init --app myapp --environments prod,staging
+$ envars init --app myapp --environments prod,staging --kms-key-arn <your-arn>
 ```
 
 Add a variable default value
