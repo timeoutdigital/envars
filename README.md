@@ -2,13 +2,19 @@
 
 Command-line Python application to manage environment variables and AWS KMS encrypted secrets in a single file.
 
+## Requirements
+
+A KMS key should be created in your AWS account.
+
+further reading at https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+
 ## Install
 
 ```
 $ pip install git+ssh://git@github.com/timeoutdigital/envars
 ```
 
-I may publish to pypi at a later date but sadly the `envars` name is already taken
+I may publish to pypi at a later date but sadly the `envars` name is already taken.
 
 ## Local Development
 
