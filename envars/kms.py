@@ -7,7 +7,6 @@ from botocore.exceptions import NoRegionError
 class KMSAgent(object):
 
     key_id = 'arn:aws:kms:eu-west-1:511042647617:key/fa5e3309-6af0-4df2-afd2-b21d480beaf4'
-    key_id = 'alias/envars'
 
     def __init__(self):
         self.cache = {}
