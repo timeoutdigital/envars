@@ -2,8 +2,9 @@ import subprocess
 
 import yaml
 
+from envars.envars import add_var, process
+
 CMD = 'python -m envars.envars'
-KKA = 'arn:aws:kms:eu-west-1:511042647617:key/fa5e3309-6af0-4df2-afd2-b21d480beaf4'
 
 
 def run_cmd(tmp_path, cmd=None):
@@ -24,7 +25,7 @@ def test_init(tmp_path):
 
 
 def test_add_default(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -v TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
@@ -33,7 +34,7 @@ def test_add_default(tmp_path):
 
 
 def test_add_prod(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -e prod -v TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
@@ -42,7 +43,7 @@ def test_add_prod(tmp_path):
 
 
 def test_add_prod_master(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -e prod -a master -v TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
@@ -51,19 +52,19 @@ def test_add_prod_master(tmp_path):
 
 
 def test_add_invalid_stage_fails(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -e foo -v TEST=test')
     assert ret.returncode == 1
 
 
 def test_add_invalid_account_fails(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -a foo -v TEST=test')
     assert ret.returncode == 1
 
 
 def test_prod_account_value_returned(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     run_cmd(tmp_path, 'add -v TEST=dtf')
     run_cmd(tmp_path, 'add -a master -e prod -v TEST=prod-master')
     run_cmd(tmp_path, 'add -a sandbox -e prod -v TEST=prod-sandbox')
@@ -71,8 +72,33 @@ def test_prod_account_value_returned(tmp_path):
     assert ret.stdout.decode() == 'TEST=prod-master\n'
 
 
-def test_secret(tmp_path):
-    run_cmd(tmp_path, f'init --app testapp --environments prod,staging --kms-key-arn {KKA}')
-    run_cmd(tmp_path, 'add -s -v TEST=sssssh')
-    ret = subprocess.run(f'{CMD} -f {tmp_path}/envars.yml print -d -e prod', shell=True, capture_output=True)
-    assert ret.stdout.decode() == 'TEST=sssssh\n'
+def test_secret(kms_stub, tmp_path):
+    kms_stub.add_response(
+        'encrypt',
+        service_response={'CiphertextBlob': b'dfghsdghfsd'}
+    )
+    kms_stub.add_response(
+        'decrypt',
+        service_response={'KeyId': 'TEST', 'Plaintext': b'sssssh', 'EncryptionAlgorithm': 'SYMMETRIC_DEFAULT'}
+    )
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Arg', (object,), {
+        'var': 'test=sssssh',
+        'secret': True,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+    args = type('Arg', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': True,
+    })
+    ret = process(args)
+
+    assert ret == 'TEST=sssssh'

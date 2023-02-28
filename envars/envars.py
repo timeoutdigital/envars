@@ -229,6 +229,10 @@ def add_var(args):
 
 
 def print_env(args):
+    print(process(args))
+
+
+def process(args):
     envars = EnVars(args.filename)
     envars.load()
 
@@ -243,7 +247,7 @@ def print_env(args):
             template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
 
         if args.yaml:
-            print(
+            return(
                 yaml.dump(
                     {'envars': envars.build_env(
                         args.env,
@@ -260,7 +264,7 @@ def print_env(args):
                     account,
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
-                print(f'{name}={value}')
+                return(f'{name}={value}')
     else:
         var = None
         if args.var:
