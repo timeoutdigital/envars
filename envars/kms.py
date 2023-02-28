@@ -6,10 +6,9 @@ from botocore.exceptions import NoRegionError
 
 class KMSAgent(object):
 
-    key_id = 'arn:aws:kms:eu-west-1:511042647617:key/fa5e3309-6af0-4df2-afd2-b21d480beaf4'
-
-    def __init__(self):
+    def __init__(self, kms_key_arn):
         self.cache = {}
+        self.kms_key_arn = kms_key_arn
 
     def reset(self):
         self.cache = {}
@@ -43,7 +42,7 @@ class KMSAgent(object):
             pass
 
         response = self.kms_client.encrypt(
-            KeyId=self.key_id,
+            KeyId=self.kms_key_arn,
             Plaintext=plaintext.encode('utf-8'),
             EncryptionContext=encryption_context
         )
@@ -53,6 +52,3 @@ class KMSAgent(object):
 
     def _cache_key(self, plaintext, encryption_context):
         return (plaintext,) + tuple(sorted(encryption_context.items()))
-
-
-kms_agent = KMSAgent()

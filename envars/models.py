@@ -3,7 +3,7 @@ import logging
 import jinja2
 import yaml
 
-from .kms import kms_agent
+from .kms import KMSAgent
 
 logging.getLogger("botocore.parsers").disabled = True
 logging.getLogger("botocore.retryhandler").disabled = True
@@ -50,8 +50,9 @@ yaml.add_constructor(u'!secret', secret_constructor)
 
 class EnVar:
 
-    def __init__(self, name, envs, app, desc=None):
+    def __init__(self, parent, name, envs, app, desc=None):
         logging.debug(f'EnVar init({name}, {envs}, {app}, {desc})')
+        self.parent = parent
         self.app = app
         self.desc = desc
         self.envs = envs
@@ -80,6 +81,7 @@ class EnVar:
 
     def decrypt(self, value, env, account, decrypt):
         logging.debug(f'decrypt({value}, {env}, {account})')
+        kms_agent = KMSAgent(self.parent.kms_key_arn)
         if decrypt and isinstance(value, Secret):
             encryption_context = {}
             encryption_context['app'] = self.app
@@ -99,6 +101,7 @@ class EnVars:
         self.app = None
         self.envs = []
         self.envars = []
+        self.kms_key_arn = None
 
     def load(self):
         with open(self.filename, "rb") as envars_yml:
@@ -106,24 +109,27 @@ class EnVars:
 
         config = envars_file["configuration"]
         self.app = config['APP']
+        self.kms_key_arn = config['KMS_KEY_ARN']
         self.envs = config['ENVIRONMENTS']
         for var in envars_file['environment_variables']:
             desc = None
             if 'description' in envars_file['environment_variables'][var]:
                 desc = envars_file['environment_variables'][var]['description']
-            self.envars.append(EnVar(var, envars_file['environment_variables'][var], self.app, desc=desc))
+            self.envars.append(EnVar(self, var, envars_file['environment_variables'][var], self.app, desc=desc))
 
     def save(self):
         data = {}
         data['configuration'] = {}
         data['configuration']['APP'] = self.app
         data['configuration']['ENVIRONMENTS'] = self.envs
+        data['configuration']['KMS_KEY_ARN'] = self.kms_key_arn
         data['environment_variables'] = self.build_yaml()
         with open(self.filename, "w") as envars_yml:
             yaml.dump(data, envars_yml, default_flow_style=False)
 
     def add(self, name, value, env_name='default', account=None, desc=None, is_secret=False):
         logging.debug(f'add({name}, {value}, {desc})')
+        kms_agent = KMSAgent(self.kms_key_arn)
 
         if env_name != 'default':
             if env_name not in self.envs:
@@ -156,6 +162,7 @@ class EnVars:
                     return
 
             self.envars.append(EnVar(
+                self,
                 name,
                 {env_name: {account: value}},
                 app=self.app,
@@ -171,6 +178,7 @@ class EnVars:
                     return
 
             self.envars.append(EnVar(
+                self,
                 name,
                 {env_name: value},
                 app=self.app,

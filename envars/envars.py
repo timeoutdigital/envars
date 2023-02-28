@@ -51,6 +51,11 @@ def main():
         '--environments',
         required=True,
     )
+    parser_init.add_argument(
+        '-k',
+        '--kms-key-arn',
+        required=True,
+    )
     parser_init.set_defaults(func=init)
 
     #
@@ -201,6 +206,7 @@ def validate(args):
 def init(args):
     envars = EnVars(args.filename)
     envars.app = args.app
+    envars.kms_key_arn = args.kms_key_arn
     envars.envs = args.environments.split(',')
     envars.save()
 
