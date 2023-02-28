@@ -1,4 +1,3 @@
-ACCOUNT_ID = $(shell aws sts get-caller-identity | jq -r ".Account")
 BRANCH_NAME = $(shell git rev-parse --abbrev-ref HEAD)
 
 APP_NAME := envars
