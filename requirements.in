@@ -1,6 +1,8 @@
 argparse
+awscli
 boto3
 jinja2
 pip-tools
 pre-commit
+pytest
 pyyaml
