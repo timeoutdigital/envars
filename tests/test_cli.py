@@ -72,6 +72,144 @@ def test_prod_account_value_returned(tmp_path):
     assert ret.stdout.decode() == 'TEST=prod-master\n'
 
 
+def test_two_env_vars_returned(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'var': 'test1=A',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+    args = type('Args', (object,), {
+        'var': 'test2=B',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': True,
+    })
+    ret = process(args)
+
+    assert ret == ['TEST1=A', 'TEST2=B']
+
+
+def test_template_var(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'var': 'DOMAIN=timeout.com',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+    args = type('Args', (object,), {
+        'var': 'HOSTNAME=test.{{ DOMAIN }}',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': True,
+    })
+    ret = process(args)
+
+    assert ret == ['DOMAIN=timeout.com', 'HOSTNAME=test.timeout.com']
+
+
+def test_extra_template_passing(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'var': 'RELEASE={{ RELEASE }}',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'yaml': False,
+        'decrypt': True,
+        'template_var': ['RELEASE=12324523523523525234523523'],
+    })
+    ret = process(args)
+
+    assert ret == ['RELEASE=12324523523523525234523523']
+
+
+def test_yaml_print_env(tmp_path):
+    # used by deploy playbooks
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'var': 'RELEASE={{ RELEASE }}',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+    args = type('Args', (object,), {
+        'var': 'TEST=test',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+    args = type('Args', (object,), {
+        'var': 'STEST=stest',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'staging',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'var': None,
+        'account': None,
+        'yaml': True,
+        'decrypt': True,
+        'template_var': ['RELEASE=12324523523523525234523523'],
+    })
+    ret = process(args)
+
+    assert ret == "envars:\n  RELEASE: '12324523523523525234523523'\n  TEST: test\n"
+
+
 def test_secret(kms_stub, tmp_path):
     kms_stub.add_response(
         'encrypt',
@@ -101,4 +239,4 @@ def test_secret(kms_stub, tmp_path):
     })
     ret = process(args)
 
-    assert ret == 'TEST=sssssh'
+    assert ret == ['TEST=sssssh']
