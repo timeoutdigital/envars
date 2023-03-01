@@ -224,12 +224,17 @@ def add_var(args):
         desc=args.desc,
         is_secret=args.secret,
     )
-    envars.print(args.account, args.env, var=name)
+    print(envars.print(args.account, env=args.env, var=name))
     envars.save()
 
 
 def print_env(args):
-    print(process(args))
+    ret = process(args)
+    if isinstance(ret, list):
+        for var in ret:
+            print(var)
+    else:
+        print(ret)
 
 
 def process(args):
@@ -259,17 +264,19 @@ def process(args):
                 )
             )
         else:
+            env_vars = []
             for name, value in envars.build_env(
                     args.env,
                     account,
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
-                return(f'{name}={value}')
+                env_vars.append(f'{name}={value}')
+            return env_vars
     else:
         var = None
         if args.var:
             var = args.var.upper()
-        envars.print(account, var=var, decrypt=args.decrypt)
+        return(envars.print(account, var=var, decrypt=args.decrypt))
 
 
 def flatten(lis):

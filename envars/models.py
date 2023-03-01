@@ -233,4 +233,4 @@ class EnVars:
 
     def print(self, account, env=None, var=None, decrypt=False):
         logging.debug(f'print({account}, {env}, {decrypt})')
-        print(yaml.dump(self.build(account, var, decrypt)))
+        return yaml.dump(self.build(account, var, decrypt))
