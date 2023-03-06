@@ -62,7 +62,7 @@ Add a environment specific variable
 ```
 $ envars add --env prod -v MYVAR=myprodvalue
 ```
-Add a secrect
+Add a secret
 
 ```
 $ envars add --secret --var MYSECRET=ssssshh
