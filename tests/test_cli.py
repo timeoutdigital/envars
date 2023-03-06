@@ -21,7 +21,18 @@ def test_init(tmp_path):
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
         data = envars.read().decode()
-    assert data == 'configuration:\n  APP: testapp\n  ENVIRONMENTS:\n  - prod\n  - staging\n  KMS_KEY_ARN: abc\nenvironment_variables: {}\n'
+    assert data == """configuration:
+
+  APP: testapp
+
+  ENVIRONMENTS:
+  - prod
+  - staging
+
+  KMS_KEY_ARN: abc
+
+environment_variables: {}
+"""
 
 
 def test_add_default(tmp_path):

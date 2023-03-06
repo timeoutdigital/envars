@@ -1,4 +1,5 @@
 import logging
+import re
 
 import jinja2
 import yaml
@@ -118,14 +119,19 @@ class EnVars:
             self.envars.append(EnVar(self, var, envars_file['environment_variables'][var], self.app, desc=desc))
 
     def save(self):
-        data = {}
-        data['configuration'] = {}
-        data['configuration']['APP'] = self.app
-        data['configuration']['ENVIRONMENTS'] = self.envs
-        data['configuration']['KMS_KEY_ARN'] = self.kms_key_arn
-        data['environment_variables'] = self.build_yaml()
         with open(self.filename, "w") as envars_yml:
-            yaml.dump(data, envars_yml, default_flow_style=False)
+            data = {}
+            data['configuration'] = {}
+            data['configuration']['APP'] = self.app
+            data['configuration']['ENVIRONMENTS'] = self.envs
+            data['configuration']['KMS_KEY_ARN'] = self.kms_key_arn
+            stream = yaml.dump(data, default_flow_style=False)
+            envars_yml.write(re.sub(r'\n  ([A-Z])', r'\n\n  \1', stream))
+            envars_yml.write('\n')
+            data = {}
+            data['environment_variables'] = self.build_yaml()
+            stream = yaml.dump(data, default_flow_style=False)
+            envars_yml.write(re.sub(r'\n  ([A-Z])', r'\n\n  \1', stream))
 
     def add(self, name, value, env_name='default', account=None, desc=None, is_secret=False):
         logging.debug(f'add({name}, {value}, {desc})')
