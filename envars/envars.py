@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import os
+import re
 import sys
 
 import boto3
@@ -89,9 +91,7 @@ def main():
         action='store_true',
     )
     parser_add.add_argument(
-        '-v',
-        '--var',
-        required=True,
+        'variable',
     )
     parser_add.set_defaults(func=add_var)
 
@@ -148,6 +148,26 @@ def main():
         'exec',
         help='execute command with variables set',
     )
+    parser_exec.add_argument(
+        '-e',
+        '--env',
+        required=True,
+    )
+    parser_exec.add_argument(
+        '-a',
+        '--account',
+        required=False,
+        default=None,
+    )
+    parser_exec.add_argument(
+        '-t',
+        '--template-var',
+        required=False,
+        nargs='+',
+        action='append',
+        default=[],
+    )
+    parser_exec.add_argument('command', nargs=argparse.REMAINDER)
     parser_exec.set_defaults(func=execute)
 
     #
@@ -168,8 +188,16 @@ def main():
     args.func(args)
 
 
-def execute():
-    pass
+def execute(args):
+    command = args.command
+    args.yaml = False
+    args.decrypt = True
+    ret = process(args)
+    vals = {}
+    for val in ret:
+        vals[val.split('=')[0]] = val.split('=')[1]
+    os.environ.update(vals)
+    os.execlp(command[0], *command)
 
 
 def validate(args):
@@ -212,8 +240,11 @@ def init(args):
 
 
 def add_var(args):
-    name = args.var.split('=')[0].upper()
-    value = args.var.split('=')[1]
+    matches = re.match(r'^([A-Z][A-Z|0-9|_]+)=(.*)$', args.variable)
+    if not matches:
+        raise(Exception('"VAR_NAME=value" expected'))
+    name = matches.group(1)
+    value = matches.group(2)
     envars = EnVars(args.filename)
     envars.load()
     envars.add(
