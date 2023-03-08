@@ -83,6 +83,31 @@ def test_prod_account_value_returned(tmp_path):
     assert ret.stdout.decode() == 'TEST=prod-master\n'
 
 
+def test_eqauls_in_value(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST1=abc=',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': True,
+    })
+    ret = process(args)
+
+    assert ret == ['TEST1=abc=']
+
+
 def test_two_env_vars_returned(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Args', (object,), {
