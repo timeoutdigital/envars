@@ -37,7 +37,7 @@ environment_variables: {}
 
 def test_add_default(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'add -v TEST=test')
+    ret = run_cmd(tmp_path, 'add TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
         yml = yaml.load(envars, Loader=yaml.SafeLoader)
@@ -46,7 +46,7 @@ def test_add_default(tmp_path):
 
 def test_add_prod(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'add -e prod -v TEST=test')
+    ret = run_cmd(tmp_path, 'add -e prod TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
         yml = yaml.load(envars, Loader=yaml.SafeLoader)
@@ -55,7 +55,7 @@ def test_add_prod(tmp_path):
 
 def test_add_prod_master(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'add -e prod -a master -v TEST=test')
+    ret = run_cmd(tmp_path, 'add -e prod -a master TEST=test')
     assert ret.returncode == 0
     with open(f'{tmp_path}/envars.yml', 'rb') as envars:
         yml = yaml.load(envars, Loader=yaml.SafeLoader)
@@ -64,29 +64,54 @@ def test_add_prod_master(tmp_path):
 
 def test_add_invalid_stage_fails(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'add -e foo -v TEST=test')
+    ret = run_cmd(tmp_path, 'add -e foo TEST=test')
     assert ret.returncode == 1
 
 
 def test_add_invalid_account_fails(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'add -a foo -v TEST=test')
+    ret = run_cmd(tmp_path, 'add -a foo TEST=test')
     assert ret.returncode == 1
 
 
 def test_prod_account_value_returned(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    run_cmd(tmp_path, 'add -v TEST=dtf')
-    run_cmd(tmp_path, 'add -a master -e prod -v TEST=prod-master')
-    run_cmd(tmp_path, 'add -a sandbox -e prod -v TEST=prod-sandbox')
+    run_cmd(tmp_path, 'add TEST=dtf')
+    run_cmd(tmp_path, 'add -a master -e prod TEST=prod-master')
+    run_cmd(tmp_path, 'add -a sandbox -e prod TEST=prod-sandbox')
     ret = subprocess.run(f'{CMD} -f {tmp_path}/envars.yml print -e prod -a master', shell=True, capture_output=True)
     assert ret.stdout.decode() == 'TEST=prod-master\n'
+
+
+def test_eqauls_in_value(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST1=abc=',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Args', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': True,
+    })
+    ret = process(args)
+
+    assert ret == ['TEST1=abc=']
 
 
 def test_two_env_vars_returned(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Args', (object,), {
-        'var': 'test1=A',
+        'variable': 'TEST1=A',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -95,7 +120,7 @@ def test_two_env_vars_returned(tmp_path):
     })
     add_var(args)
     args = type('Args', (object,), {
-        'var': 'test2=B',
+        'variable': 'TEST2=B',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -120,7 +145,7 @@ def test_two_env_vars_returned(tmp_path):
 def test_template_var(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Args', (object,), {
-        'var': 'DOMAIN=timeout.com',
+        'variable': 'DOMAIN=timeout.com',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -129,7 +154,7 @@ def test_template_var(tmp_path):
     })
     add_var(args)
     args = type('Args', (object,), {
-        'var': 'HOSTNAME=test.{{ DOMAIN }}',
+        'variable': 'HOSTNAME=test.{{ DOMAIN }}',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -154,7 +179,7 @@ def test_template_var(tmp_path):
 def test_extra_template_passing(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Args', (object,), {
-        'var': 'RELEASE={{ RELEASE }}',
+        'variable': 'RELEASE={{ RELEASE }}',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -180,7 +205,7 @@ def test_yaml_print_env(tmp_path):
     # used by deploy playbooks
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Args', (object,), {
-        'var': 'RELEASE={{ RELEASE }}',
+        'variable': 'RELEASE={{ RELEASE }}',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -189,7 +214,7 @@ def test_yaml_print_env(tmp_path):
     })
     add_var(args)
     args = type('Args', (object,), {
-        'var': 'TEST=test',
+        'variable': 'TEST=test',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
@@ -198,7 +223,7 @@ def test_yaml_print_env(tmp_path):
     })
     add_var(args)
     args = type('Args', (object,), {
-        'var': 'STEST=stest',
+        'variable': 'STEST=stest',
         'secret': False,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'staging',
@@ -232,7 +257,7 @@ def test_secret(kms_stub, tmp_path):
     )
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
     args = type('Arg', (object,), {
-        'var': 'test=sssssh',
+        'variable': 'TEST=sssssh',
         'secret': True,
         'filename': f'{tmp_path}/envars.yml',
         'env': 'default',
