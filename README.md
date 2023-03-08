@@ -54,18 +54,18 @@ $ envars init --app myapp --environments prod,staging --kms-key-arn <your-arn>
 Add a variable default value
 
 ```
-$ envars add -var MYVAR=myvalue
+$ envars add MYVAR=myvalue
 ```
 
 Add a environment specific variable
 
 ```
-$ envars add --env prod -v MYVAR=myprodvalue
+$ envars add --env prod -MYVAR=myprodvalue
 ```
 Add a secret
 
 ```
-$ envars add --secret --var MYSECRET=ssssshh
+$ envars add --secret MYSECRET=ssssshh
 ```
 
 To print the variables for a specific environment
