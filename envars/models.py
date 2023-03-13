@@ -234,13 +234,16 @@ class EnVars:
             if not isinstance(envars[var], Secret):
                 if 'parameter_store:' in envars[var]:
                     pname = envars[var].split(':')[1]
+                    pvalue = 'UNKNOWN-ERROR-FETCHING-FROM-PARAMETER-STORE'
                     try:
                         param = ssm_client.get_parameter(Name=pname)
-                        value = param['Parameter']['Value']
+                        pvalue = param['Parameter']['Value']
                     except ClientError as e:
                         if e.response['Error']['Code'] == 'ParameterNotFound':
-                            value = f'NOT-FOUND-IN-PSTORE-{pname}'
-                    envars[var] = value
+                            pvalue = f'NOT-FOUND-IN-PSTORE-{pname}'
+                        elif e.response['Error']['Code'] == 'AccessDeniedException':
+                            pvalue = f'PARAMETER-STORE-ACCESS-DENIED-{pname}'
+                    envars[var] = pvalue
 
         return envars
 
