@@ -73,3 +73,13 @@ To print the variables for a specific environment
 ```
 $ envars print --decrypt --env prod
 ```
+
+Loading a var from parameter store at runtime
+---------------------------------------------
+
+```
+MY_SPECIAL_VAR:
+  default: parameter_store:/path/VAR
+```
+
+At runtime the value of `MY_SPECIAL_VAR` will be replaced with the value from parameter store

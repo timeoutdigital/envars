@@ -1,8 +1,10 @@
 import logging
 import re
 
+import boto3
 import jinja2
 import yaml
+from botocore.exceptions import ClientError
 
 from .kms import KMSAgent
 
@@ -18,6 +20,8 @@ logging.getLogger("botocore.loaders").disabled = True
 logging.getLogger("botocore.client").disabled = True
 logging.getLogger("botocore.regions").disabled = True
 logging.getLogger("urllib3.connectionpool").disabled = True
+
+ssm_client = boto3.client('ssm')
 
 
 def get_loader():
@@ -224,6 +228,19 @@ class EnVars:
             if value:
                 if v.name not in envars:
                     envars[v.name] = value
+
+        # process 'parameter_store' values
+        for var in envars:
+            if not isinstance(envars[var], Secret):
+                if 'parameter_store:' in envars[var]:
+                    pname = envars[var].split(':')[1]
+                    try:
+                        param = ssm_client.get_parameter(Name=pname)
+                        value = param['Parameter']['Value']
+                    except ClientError as e:
+                        if e.response['Error']['Code'] == 'ParameterNotFound':
+                            value = f'NOT-FOUND-IN-PSTORE-{pname}'
+                    envars[var] = value
 
         return envars
 
