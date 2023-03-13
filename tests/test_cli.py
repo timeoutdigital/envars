@@ -276,3 +276,31 @@ def test_secret(kms_stub, tmp_path):
     ret = process(args)
 
     assert ret == ['TEST=sssssh']
+
+
+def test_parameter_store_value(ssm_stub, tmp_path):
+    ssm_stub.add_response(
+        'get_parameter',
+        service_response={'Parameter': {'Value': '1234'}}
+    )
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Arg', (object,), {
+        'variable': 'PTEST=parameter_store:/gp-web/prod/1234/CANARY',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    add_var(args)
+
+    args = type('Arg', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': ['RELEASE=1234'],
+        'yaml': False,
+        'decrypt': False,
+    })
+    ret = process(args)
+    assert ret == ['PTEST=1234']
