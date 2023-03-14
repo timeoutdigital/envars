@@ -242,7 +242,7 @@ def init(args):
 def add_var(args):
     matches = re.match(r'^([A-Z][A-Z|0-9|_]+)=(.*)$', args.variable)
     if not matches:
-        raise(Exception('"VAR_NAME=value" expected'))
+        raise (Exception('"VAR_NAME=value" expected'))
     name = matches.group(1)
     value = matches.group(2)
     envars = EnVars(args.filename)
@@ -283,7 +283,7 @@ def process(args):
             template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
 
         if args.yaml:
-            return(
+            return (
                 yaml.dump(
                     {'envars': envars.build_env(
                         args.env,
@@ -307,7 +307,7 @@ def process(args):
         var = None
         if args.var:
             var = args.var.upper()
-        return(envars.print(account, var=var, decrypt=args.decrypt))
+        return (envars.print(account, var=var, decrypt=args.decrypt))
 
 
 def flatten(lis):

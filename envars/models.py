@@ -143,10 +143,10 @@ class EnVars:
 
         if env_name != 'default':
             if env_name not in self.envs:
-                raise(Exception(f'Unknown Env: "{env_name}"'))
+                raise (Exception(f'Unknown Env: "{env_name}"'))
 
         if account and account not in ['master', 'sandbox']:
-            raise(Exception(f'Unknown Account: {account}'))
+            raise (Exception(f'Unknown Account: {account}'))
 
         if is_secret:
             encryption_context = {}
@@ -201,11 +201,11 @@ class EnVars:
             envars[var.name] = var.envs
         return envars
 
-    def build_env(self, env, account, decrypt=False, template_vars={}):
+    def build_env(self, env, account, decrypt=False, template_vars=None):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
         if env != 'default' and env not in self.envs:
-            raise(Exception(f'Unknown Env: "{env}"'))
+            raise (Exception(f'Unknown Env: "{env}"'))
 
         template_vars['STAGE'] = env
         # fetch all the non secret values
