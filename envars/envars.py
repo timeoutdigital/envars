@@ -195,6 +195,9 @@ def execute(args):
     args.var = None
     if not args.env:
         args.env = os.environ.get('STAGE')
+    if not args.env:
+        print('STAGE=<env> or -e <env> must be supplied')
+        sys.exit(1)
     if 'RELEASE_SHA' in os.environ:
         args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
     ret = process(args)
