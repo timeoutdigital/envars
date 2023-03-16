@@ -151,7 +151,7 @@ def main():
     parser_exec.add_argument(
         '-e',
         '--env',
-        required=True,
+        required=False,
     )
     parser_exec.add_argument(
         '-a',
@@ -192,6 +192,14 @@ def execute(args):
     command = args.command
     args.yaml = False
     args.decrypt = True
+    args.var = None
+    if not args.env:
+        args.env = os.environ.get('STAGE')
+    if not args.env:
+        print('STAGE=<env> or -e <env> must be supplied')
+        sys.exit(1)
+    if 'RELEASE_SHA' in os.environ:
+        args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
     ret = process(args)
     vals = {}
     for val in ret:
