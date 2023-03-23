@@ -154,6 +154,12 @@ def main():
         required=False,
     )
     parser_exec.add_argument(
+        '-v',
+        '--var',
+        required=False,
+        default=None,
+    )
+    parser_exec.add_argument(
         '-a',
         '--account',
         required=False,
@@ -192,7 +198,6 @@ def execute(args):
     command = args.command
     args.yaml = False
     args.decrypt = True
-    args.var = None
     if not args.env:
         args.env = os.environ.get('STAGE')
     if not args.env:
@@ -200,10 +205,18 @@ def execute(args):
         sys.exit(1)
     if 'RELEASE_SHA' in os.environ:
         args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
-    ret = process(args)
+
     vals = {}
-    for val in ret:
-        vals[val.split('=')[0]] = val.split('=')[1]
+    if args.var:
+        envars = EnVars(args.filename)
+        envars.load()
+        vals = envars.get_var(args.var, args.env, args.account)
+    else:
+        args.var = None
+        ret = process(args)
+        for val in ret:
+            vals[val.split('=')[0]] = val.split('=')[1]
+
     os.environ.update(vals)
     os.execlp(command[0], *command)
 
