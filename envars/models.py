@@ -68,7 +68,7 @@ class EnVar:
     def __repr__(self):
         return f"EnVar(name='{self.name}', envs={self.envs})"
 
-    def get_value(self, env, account, decrypt=False):
+    def get_value(self, env, account, decrypt=False, fetch_pstore=False):
         value = None
         if env in self.envs:
             if isinstance(self.envs[env], dict):
@@ -82,6 +82,21 @@ class EnVar:
                     value = self.decrypt(self.envs['default'][account], 'default', account, decrypt)
             else:
                 value = self.decrypt(self.envs['default'], 'default', None, decrypt)
+
+        if value and fetch_pstore and not isinstance(value, Secret):
+            if 'parameter_store:' in value:
+                pname = value.split(':')[1]
+                pvalue = 'UNKNOWN-ERROR-FETCHING-FROM-PARAMETER-STORE'
+                try:
+                    param = ssm_client.get_parameter(Name=pname)
+                    pvalue = param['Parameter']['Value']
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'ParameterNotFound':
+                        pvalue = f'NOT-FOUND-IN-PSTORE-{pname}'
+                    elif e.response['Error']['Code'] == 'AccessDeniedException':
+                        pvalue = f'PARAMETER-STORE-ACCESS-DENIED-{pname}'
+                value = pvalue
+
         return value
 
     def decrypt(self, value, env, account, decrypt):
@@ -201,6 +216,11 @@ class EnVars:
             envars[var.name] = var.envs
         return envars
 
+    def get_var(self, var, env, account):
+        for v in self.envars:
+            if v.name == var:
+                return {v.name: v.get_value(env, account, fetch_pstore=True)}
+
     def build_env(self, env, account, decrypt=False, template_vars=None):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
@@ -210,7 +230,7 @@ class EnVars:
         template_vars['STAGE'] = env
         # fetch all the non secret values
         for v in self.envars:
-            value = v.get_value(env, account)
+            value = v.get_value(env, account, fetch_pstore=True)
             if value and not isinstance(value, Secret):
                 if v.name not in template_vars.keys():
                     template_vars[v.name] = value
@@ -228,22 +248,6 @@ class EnVars:
             if value:
                 if v.name not in envars:
                     envars[v.name] = value
-
-        # process 'parameter_store' values
-        for var in envars:
-            if not isinstance(envars[var], Secret):
-                if 'parameter_store:' in envars[var]:
-                    pname = envars[var].split(':')[1]
-                    pvalue = 'UNKNOWN-ERROR-FETCHING-FROM-PARAMETER-STORE'
-                    try:
-                        param = ssm_client.get_parameter(Name=pname)
-                        pvalue = param['Parameter']['Value']
-                    except ClientError as e:
-                        if e.response['Error']['Code'] == 'ParameterNotFound':
-                            pvalue = f'NOT-FOUND-IN-PSTORE-{pname}'
-                        elif e.response['Error']['Code'] == 'AccessDeniedException':
-                            pvalue = f'PARAMETER-STORE-ACCESS-DENIED-{pname}'
-                    envars[var] = pvalue
 
         return envars
 
