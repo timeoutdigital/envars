@@ -1,8 +1,10 @@
+import os
 import subprocess
+from unittest.mock import MagicMock
 
 import yaml
 
-from envars.envars import add_var, process
+from envars import envars
 
 CMD = 'python -m envars.envars'
 
@@ -93,7 +95,7 @@ def test_eqauls_in_value(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Args', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -103,7 +105,7 @@ def test_eqauls_in_value(tmp_path):
         'yaml': False,
         'decrypt': True,
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == ['TEST1=abc=']
 
@@ -118,7 +120,7 @@ def test_two_env_vars_returned(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
     args = type('Args', (object,), {
         'variable': 'TEST2=B',
         'secret': False,
@@ -127,7 +129,7 @@ def test_two_env_vars_returned(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Args', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -137,7 +139,7 @@ def test_two_env_vars_returned(tmp_path):
         'yaml': False,
         'decrypt': True,
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == ['TEST1=A', 'TEST2=B']
 
@@ -152,7 +154,7 @@ def test_template_var(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
     args = type('Args', (object,), {
         'variable': 'HOSTNAME=test.{{ DOMAIN }}',
         'secret': False,
@@ -161,7 +163,7 @@ def test_template_var(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Args', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -171,7 +173,7 @@ def test_template_var(tmp_path):
         'yaml': False,
         'decrypt': True,
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == ['DOMAIN=timeout.com', 'HOSTNAME=test.timeout.com']
 
@@ -186,7 +188,7 @@ def test_extra_template_passing(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Args', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -196,7 +198,7 @@ def test_extra_template_passing(tmp_path):
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == ['RELEASE=12324523523523525234523523']
 
@@ -212,7 +214,7 @@ def test_yaml_print_env(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
     args = type('Args', (object,), {
         'variable': 'TEST=test',
         'secret': False,
@@ -221,7 +223,7 @@ def test_yaml_print_env(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
     args = type('Args', (object,), {
         'variable': 'STEST=stest',
         'secret': False,
@@ -230,7 +232,7 @@ def test_yaml_print_env(tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Args', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -241,7 +243,7 @@ def test_yaml_print_env(tmp_path):
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == "envars:\n  RELEASE: '12324523523523525234523523'\n  TEST: test\n"
 
@@ -264,7 +266,7 @@ def test_secret(kms_stub, tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
     args = type('Arg', (object,), {
         'filename': f'{tmp_path}/envars.yml',
         'env': 'prod',
@@ -273,7 +275,7 @@ def test_secret(kms_stub, tmp_path):
         'yaml': False,
         'decrypt': True,
     })
-    ret = process(args)
+    ret = envars.process(args)
 
     assert ret == ['TEST=sssssh']
 
@@ -292,7 +294,7 @@ def test_parameter_store_value(ssm_stub, tmp_path):
         'desc': None,
         'account': None,
     })
-    add_var(args)
+    envars.add_var(args)
 
     args = type('Arg', (object,), {
         'filename': f'{tmp_path}/envars.yml',
@@ -302,5 +304,41 @@ def test_parameter_store_value(ssm_stub, tmp_path):
         'yaml': False,
         'decrypt': False,
     })
-    ret = process(args)
+    ret = envars.process(args)
     assert ret == ['PTEST=1234']
+
+
+def test_exec_one_var(tmp_path):
+    # used by some instance service scripts
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST=test',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+    args = type('Args', (object,), {
+        'variable': 'STEST=stest',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+
+    args = type('Args', (object,), {
+        'account': None,
+        'command': ['printenv'],
+        'env': 'prod',
+        'filename': f'{tmp_path}/envars.yml',
+        'var': 'TEST',
+    })
+    envars.os.execlp = MagicMock()
+    envars.execute(args)
+
+    assert os.environ.get('TEST') == 'test'
+    assert 'STEST' not in os.environ
