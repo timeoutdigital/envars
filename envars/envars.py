@@ -215,7 +215,8 @@ def execute(args):
         args.var = None
         ret = process(args)
         for val in ret:
-            vals[val.split('=')[0]] = val.split('=')[1]
+            matches = re.match(r'^([A-Z][A-Z|0-9|_]+)=(.*)$', val)
+            vals[matches.group(1)] = matches.group(2)
 
     os.environ.update(vals)
     os.execlp(command[0], *command)

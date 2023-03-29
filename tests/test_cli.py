@@ -342,3 +342,40 @@ def test_exec_one_var(tmp_path):
 
     assert os.environ.get('TEST') == 'test'
     assert 'STEST' not in os.environ
+
+
+def test_exec(tmp_path):
+    # used by some instance service scripts
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST=test',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+    args = type('Args', (object,), {
+        'variable': 'STEST=stest=',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+
+    args = type('Args', (object,), {
+        'account': None,
+        'command': ['printenv'],
+        'env': 'prod',
+        'filename': f'{tmp_path}/envars.yml',
+        'var': None,
+        'template_var': [],
+    })
+    envars.os.execlp = MagicMock()
+    envars.execute(args)
+
+    assert os.environ.get('TEST') == 'test'
+    assert os.environ.get('STEST') == 'stest='
