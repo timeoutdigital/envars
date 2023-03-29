@@ -215,8 +215,8 @@ def execute(args):
         args.var = None
         ret = process(args)
         for val in ret:
-            matches = re.match(r'^([A-Z][A-Z|0-9|_]+)=(.*)$', val)
-            vals[matches.group(1)] = matches.group(2)
+            parts = val.split("=", 1)
+            vals[parts[0]] = parts[1]
 
     os.environ.update(vals)
     os.execlp(command[0], *command)
