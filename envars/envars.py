@@ -223,7 +223,8 @@ def execute(args):
         args.var = None
         ret = process(args)
         for val in ret:
-            vals[val.split('=')[0]] = val.split('=')[1]
+            parts = val.split("=", 1)
+            vals[parts[0]] = parts[1]
 
     os.environ.update(vals)
     os.execlp(command[0], *command)
