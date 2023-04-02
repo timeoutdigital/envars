@@ -247,6 +247,7 @@ def main():
 def set_systemd_env(args):
     args.yaml = False
     args.decrypt = True
+    args.quote = False
     if not args.env:
         args.env = os.environ.get('STAGE')
     if not args.env:
@@ -270,6 +271,7 @@ def execute(args):
     command = args.command
     args.yaml = False
     args.decrypt = True
+    args.quote = False
     if not args.env:
         args.env = os.environ.get('STAGE')
     if not args.env:
