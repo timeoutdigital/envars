@@ -148,6 +148,13 @@ def main():
         required=False,
         action='store_true',
     )
+    parser_print.add_argument(
+        '-q',
+        '--quote',
+        required=False,
+        default=False,
+        action='store_true',
+    )
     parser_print.set_defaults(func=print_env)
 
     #
@@ -388,7 +395,11 @@ def process(args):
                     account,
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
-                env_vars.append(f'{name}={value}')
+                if args.quote:
+                    env_vars.append(f'{name}="{value}"')
+                else:
+                    env_vars.append(f'{name}={value}')
+
             return env_vars
     else:
         var = None
