@@ -7,14 +7,6 @@ import subprocess
 import sys
 
 import boto3
-from botocore.exceptions import NoCredentialsError, ProfileNotFound
-
-try:
-    boto3.session.Session()
-except (ProfileNotFound, NoCredentialsError):
-    print('AWS credentials not found, is AWS_PROFILE set? does "~/.aws/credentials" exist?')
-    sys.exit(1)
-
 import yaml
 
 from .models import EnVars
