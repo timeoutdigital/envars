@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='envars',
+    name='timeout-envars',
     version='0.1',
     description='A sample Python package',
     long_description='my test long description',
