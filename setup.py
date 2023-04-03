@@ -4,7 +4,7 @@ setup(
     name='envars',
     version='0.1',
     description='A sample Python package',
-    long_description=open('README.md').read(),
+    long_description='my test long description',
     author='Keith Harvey',
     author_email='keith.harvey@timeout.com',
     packages=['envars'],
