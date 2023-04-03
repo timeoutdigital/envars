@@ -396,7 +396,7 @@ def process(args):
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
                 if args.quote:
-                    env_vars.append(f'{name}="{value}"')
+                    env_vars.append(f"{name}='{value}'")
                 else:
                     env_vars.append(f'{name}={value}')
 
