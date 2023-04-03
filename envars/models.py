@@ -88,7 +88,7 @@ class EnVar:
                 pname = value.split(':')[1]
                 pvalue = 'UNKNOWN-ERROR-FETCHING-FROM-PARAMETER-STORE'
                 try:
-                    param = ssm_client.get_parameter(Name=pname)
+                    param = ssm_client.get_parameter(Name=pname, WithDecryption=True)
                     pvalue = param['Parameter']['Value']
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'ParameterNotFound':

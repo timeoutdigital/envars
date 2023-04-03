@@ -3,6 +3,7 @@ import argparse
 import logging
 import os
 import re
+import subprocess
 import sys
 
 import boto3
@@ -147,6 +148,13 @@ def main():
         required=False,
         action='store_true',
     )
+    parser_print.add_argument(
+        '-q',
+        '--quote',
+        required=False,
+        default=False,
+        action='store_true',
+    )
     parser_print.set_defaults(func=print_env)
 
     #
@@ -185,6 +193,40 @@ def main():
     parser_exec.set_defaults(func=execute)
 
     #
+    # set_systemd_env subparser
+    #
+    parser_set_systemd_env = subparsers.add_parser(
+        'set-systemd-env',
+        help='execute command with variables set',
+    )
+    parser_set_systemd_env.add_argument(
+        '-e',
+        '--env',
+        required=False,
+    )
+    parser_set_systemd_env.add_argument(
+        '-v',
+        '--var',
+        required=False,
+        default=None,
+    )
+    parser_set_systemd_env.add_argument(
+        '-a',
+        '--account',
+        required=False,
+        default=None,
+    )
+    parser_set_systemd_env.add_argument(
+        '-t',
+        '--template-var',
+        required=False,
+        nargs='+',
+        action='append',
+        default=[],
+    )
+    parser_set_systemd_env.set_defaults(func=set_systemd_env)
+
+    #
     # validate subparser
     #
     parser_validate = subparsers.add_parser(
@@ -202,10 +244,32 @@ def main():
     args.func(args)
 
 
+def set_systemd_env(args):
+    args.yaml = False
+    args.decrypt = True
+    args.quote = False
+    if not args.env:
+        args.env = os.environ.get('STAGE')
+    if not args.env:
+        print('STAGE=<env> or -e <env> must be supplied')
+        sys.exit(1)
+    if 'RELEASE_SHA' in os.environ:
+        args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
+    args.var = None
+    ret = process(args)
+    for val in ret:
+        parts = val.split("=", 1)
+        subprocess.run(
+            f"systemctl set-environment {parts[0]}='{parts[1]}'",
+            shell=True,
+        )
+
+
 def execute(args):
     command = args.command
     args.yaml = False
     args.decrypt = True
+    args.quote = False
     if not args.env:
         args.env = os.environ.get('STAGE')
     if not args.env:
@@ -331,7 +395,11 @@ def process(args):
                     account,
                     decrypt=args.decrypt,
                     template_vars=template_vars).items():
-                env_vars.append(f'{name}={value}')
+                if args.quote:
+                    env_vars.append(f'{name}="{value}"')
+                else:
+                    env_vars.append(f'{name}={value}')
+
             return env_vars
     else:
         var = None
