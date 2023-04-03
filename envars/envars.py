@@ -257,10 +257,8 @@ def set_systemd_env(args):
         args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
     args.var = None
     ret = process(args)
-    vals = {}
     for val in ret:
         parts = val.split("=", 1)
-        vals[parts[0]] = parts[1]
         subprocess.run(
             f"systemctl set-environment {parts[0]}='{parts[1]}'",
             shell=True,
