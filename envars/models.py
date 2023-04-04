@@ -1,12 +1,8 @@
 import logging
 import re
 
-import boto3
 import jinja2
 import yaml
-from botocore.exceptions import ClientError
-
-from .kms import KMSAgent
 
 logging.getLogger("botocore.parsers").disabled = True
 logging.getLogger("botocore.retryhandler").disabled = True
@@ -20,8 +16,6 @@ logging.getLogger("botocore.loaders").disabled = True
 logging.getLogger("botocore.client").disabled = True
 logging.getLogger("botocore.regions").disabled = True
 logging.getLogger("urllib3.connectionpool").disabled = True
-
-ssm_client = boto3.client('ssm')
 
 
 def get_loader():
@@ -85,24 +79,18 @@ class EnVar:
 
         if value and fetch_pstore and not isinstance(value, Secret):
             if 'parameter_store:' in value:
+                from .ssm import SsmAgent
+                ssm_agent = SsmAgent()
                 pname = value.split(':')[1]
-                pvalue = 'UNKNOWN-ERROR-FETCHING-FROM-PARAMETER-STORE'
-                try:
-                    param = ssm_client.get_parameter(Name=pname, WithDecryption=True)
-                    pvalue = param['Parameter']['Value']
-                except ClientError as e:
-                    if e.response['Error']['Code'] == 'ParameterNotFound':
-                        pvalue = f'NOT-FOUND-IN-PSTORE-{pname}'
-                    elif e.response['Error']['Code'] == 'AccessDeniedException':
-                        pvalue = f'PARAMETER-STORE-ACCESS-DENIED-{pname}'
-                value = pvalue
+                value = ssm_agent.fetch(pname)
 
         return value
 
     def decrypt(self, value, env, account, decrypt):
         logging.debug(f'decrypt({value}, {env}, {account})')
-        kms_agent = KMSAgent(self.parent.kms_key_arn)
         if decrypt and isinstance(value, Secret):
+            from .kms import KMSAgent
+            kms_agent = KMSAgent(self.parent.kms_key_arn)
             encryption_context = {}
             encryption_context['app'] = self.app
             if env != 'default':
@@ -154,7 +142,6 @@ class EnVars:
 
     def add(self, name, value, env_name='default', account=None, desc=None, is_secret=False):
         logging.debug(f'add({name}, {value}, {desc})')
-        kms_agent = KMSAgent(self.kms_key_arn)
 
         if env_name != 'default':
             if env_name not in self.envs:
@@ -164,6 +151,8 @@ class EnVars:
             raise (Exception(f'Unknown Account: {account}'))
 
         if is_secret:
+            from .kms import KMSAgent
+            kms_agent = KMSAgent(self.kms_key_arn)
             encryption_context = {}
             encryption_context['app'] = self.app
             if env_name != 'default':

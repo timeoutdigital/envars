@@ -2,7 +2,7 @@ import pytest
 from botocore.stub import Stubber
 
 from envars.kms import kms_client
-from envars.models import ssm_client
+from envars.ssm import ssm_client
 
 
 @pytest.fixture(scope='function', autouse=True)
