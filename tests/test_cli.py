@@ -104,7 +104,8 @@ def test_eqauls_in_value(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -139,7 +140,8 @@ def test_two_env_vars_returned(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -174,7 +176,8 @@ def test_template_var(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -200,7 +203,8 @@ def test_extra_template_passing(tmp_path):
         'yaml': False,
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -246,7 +250,8 @@ def test_yaml_print_env(tmp_path):
         'yaml': True,
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -279,7 +284,8 @@ def test_secret(kms_stub, tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
 
@@ -309,7 +315,8 @@ def test_parameter_store_value(ssm_stub, tmp_path):
         'template_var': ['RELEASE=1234'],
         'yaml': False,
         'decrypt': False,
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     ret = envars.process(args)
     assert ret == ['PTEST=1234']
@@ -343,7 +350,8 @@ def test_exec_one_var(tmp_path):
         'env': 'prod',
         'filename': f'{tmp_path}/envars.yml',
         'var': 'TEST',
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     envars.os.execlp = MagicMock()
     envars.execute(args)
@@ -381,7 +389,8 @@ def test_exec(tmp_path):
         'filename': f'{tmp_path}/envars.yml',
         'var': None,
         'template_var': [],
-        'quote': False
+        'quote': False,
+        'no_templating': False,
     })
     envars.os.execlp = MagicMock()
     envars.execute(args)
