@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='timeout-envars',
-    version='0.2',
+    version='0.3',
     description='A sample Python package',
     long_description='my test long description',
     author='Keith Harvey',

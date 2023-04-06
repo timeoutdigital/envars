@@ -116,6 +116,13 @@ def main():
         action='store_true',
     )
     parser_print.add_argument(
+        '-n',
+        '--no-templating',
+        required=False,
+        default=False,
+        action='store_true',
+    )
+    parser_print.add_argument(
         '-e',
         '--env',
         required=False,
@@ -376,6 +383,7 @@ def process(args):
                         account,
                         decrypt=args.decrypt,
                         template_vars=template_vars,
+                        no_templating=args.no_templating,
                     )},
                     default_flow_style=False
                 )
@@ -386,7 +394,8 @@ def process(args):
                     args.env,
                     account,
                     decrypt=args.decrypt,
-                    template_vars=template_vars).items():
+                    template_vars=template_vars,
+                    no_templating=args.no_templating).items():
                 if args.quote:
                     env_vars.append(f"{name}='{value}'")
                 else:
