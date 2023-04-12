@@ -116,6 +116,13 @@ def main():
         action='store_true',
     )
     parser_print.add_argument(
+        '-n',
+        '--no-templating',
+        required=False,
+        default=False,
+        action='store_true',
+    )
+    parser_print.add_argument(
         '-e',
         '--env',
         required=False,
@@ -143,6 +150,13 @@ def main():
     parser_print.add_argument(
         '-q',
         '--quote',
+        required=False,
+        default=False,
+        action='store_true',
+    )
+    parser_print.add_argument(
+        '-S',
+        '--secrets_only',
         required=False,
         default=False,
         action='store_true',
@@ -248,7 +262,17 @@ def set_systemd_env(args):
     if 'RELEASE_SHA' in os.environ:
         args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
     args.var = None
-    ret = process(args)
+    ret = process(
+        args.filename,
+        args.account,
+        args.env,
+        args.var,
+        args.template_var,
+        args.decrypt,
+        True if args.no_templating is False else False,
+        args.yaml,
+        args.quote,
+    )
     for val in ret:
         parts = val.split("=", 1)
         subprocess.run(
@@ -277,7 +301,17 @@ def execute(args):
         vals = envars.get_var(args.var, args.env, args.account)
     else:
         args.var = None
-        ret = process(args)
+        ret = process(
+            args.filename,
+            args.account,
+            args.env,
+            args.var,
+            args.template_var,
+            args.decrypt,
+            True if args.no_templating is False else False,
+            args.yaml,
+            args.quote,
+        )
         for val in ret:
             parts = val.split("=", 1)
             vals[parts[0]] = parts[1]
@@ -346,7 +380,18 @@ def add_var(args):
 
 
 def print_env(args):
-    ret = process(args)
+    ret = process(
+        args.filename,
+        args.account,
+        args.env,
+        args.var,
+        args.template_var,
+        args.decrypt,
+        True if args.no_templating is False else False,
+        args.yaml,
+        args.quote,
+        args.secrets_only,
+    )
     if isinstance(ret, list):
         for var in ret:
             print(var)
@@ -354,28 +399,35 @@ def print_env(args):
         print(ret)
 
 
-def process(args):
-    envars = EnVars(args.filename)
+def process(
+        filename, account, env,
+        var=None, template_var=None, decrypt=False,
+        templating=True, as_yaml=False, quote=False, secrets_only=False):
+
+    envars = EnVars(filename)
     envars.load()
 
-    if args.account is None:
+    if account is None:
         account = get_account()
     else:
-        account = args.account
+        account = account
 
-    if args.env:
+    if env:
         template_vars = {}
-        for tvar in flatten(args.template_var):
-            template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
+        if template_var:
+            for tvar in flatten(template_var):
+                template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
 
-        if args.yaml:
+        if as_yaml:
             return (
                 yaml.dump(
                     {'envars': envars.build_env(
-                        args.env,
+                        env,
                         account,
-                        decrypt=args.decrypt,
+                        decrypt=decrypt,
                         template_vars=template_vars,
+                        templating=templating,
+                        secrets_only=secrets_only,
                     )},
                     default_flow_style=False
                 )
@@ -383,21 +435,22 @@ def process(args):
         else:
             env_vars = []
             for name, value in envars.build_env(
-                    args.env,
+                    env,
                     account,
-                    decrypt=args.decrypt,
-                    template_vars=template_vars).items():
-                if args.quote:
+                    decrypt=decrypt,
+                    template_vars=template_vars,
+                    secrets_only=secrets_only,
+                    templating=templating).items():
+                if quote:
                     env_vars.append(f"{name}='{value}'")
                 else:
                     env_vars.append(f'{name}={value}')
 
             return env_vars
     else:
-        var = None
-        if args.var:
-            var = args.var.upper()
-        return (envars.print(account, var=var, decrypt=args.decrypt))
+        if var:
+            var = var.upper()
+        return (envars.print(account, var=var, decrypt=decrypt))
 
 
 def flatten(lis):
