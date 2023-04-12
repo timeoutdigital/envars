@@ -390,6 +390,7 @@ def print_env(args):
         True if args.no_templating is False else False,
         args.yaml,
         args.quote,
+        args.secrets_only,
     )
     if isinstance(ret, list):
         for var in ret:
@@ -398,7 +399,10 @@ def print_env(args):
         print(ret)
 
 
-def process(filename, account, env, var=None, template_var=None, decrypt=False, templating=True, as_yaml=False, quote=False):
+def process(
+        filename, account, env, var=None, template_var=None,
+        decrypt=False, templating=True, as_yaml=False, quote=False, secrets_only=False):
+
     envars = EnVars(filename)
     envars.load()
 
@@ -422,6 +426,7 @@ def process(filename, account, env, var=None, template_var=None, decrypt=False, 
                         decrypt=decrypt,
                         template_vars=template_vars,
                         templating=templating,
+                        secrets_only=secrets_only,
                     )},
                     default_flow_style=False
                 )
@@ -433,6 +438,7 @@ def process(filename, account, env, var=None, template_var=None, decrypt=False, 
                     account,
                     decrypt=decrypt,
                     template_vars=template_vars,
+                    secrets_only=secrets_only,
                     templating=templating).items():
                 if quote:
                     env_vars.append(f"{name}='{value}'")

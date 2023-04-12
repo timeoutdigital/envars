@@ -210,33 +210,44 @@ class EnVars:
             if v.name == var:
                 return {v.name: v.get_value(env, account, fetch_pstore=True)}
 
-    def build_env(self, env, account, decrypt=False, template_vars=None, templating=True):
+    def build_env(self, env, account, decrypt=False, template_vars=None, templating=True, secrets_only=False):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
         if env != 'default' and env not in self.envs:
             raise (Exception(f'Unknown Env: "{env}"'))
 
-        template_vars['STAGE'] = env
-        # fetch all the non secret values
-        for v in self.envars:
-            value = v.get_value(env, account, fetch_pstore=True)
-            if value and not isinstance(value, Secret):
-                if v.name not in template_vars.keys():
-                    template_vars[v.name] = value
-                envars[v.name] = value
+        if templating and not secrets_only:
+            template_vars['STAGE'] = env
+            # fetch all the non secret values
+            for v in self.envars:
+                value = v.get_value(env, account, fetch_pstore=True)
+                if value and not isinstance(value, Secret):
+                    if v.name not in template_vars.keys():
+                        template_vars[v.name] = value
+                    envars[v.name] = value
 
-        jenv = jinja2.Environment()
+            jenv = jinja2.Environment()
 
-        # process jinja templates
-        if templating:
-            for var in envars:
-                envars[var] = jenv.from_string(envars[var]).render(template_vars)
+            # process jinja templates
+            if templating:
+                for var in envars:
+                    envars[var] = jenv.from_string(envars[var]).render(template_vars)
 
-        # fetch secrets
-        for v in self.envars:
-            value = v.get_value(env, account, decrypt)
-            if value:
-                if v.name not in envars:
+            # fetch secrets
+            for v in self.envars:
+                value = v.get_value(env, account, decrypt)
+                if value:
+                    if v.name not in envars:
+                        envars[v.name] = value
+
+        elif secrets_only:
+            for v in self.envars:
+                if isinstance(v.get_value(env, account), Secret):
+                    envars[v.name] = v.get_value(env, account, decrypt)
+        else:
+            for v in self.envars:
+                value = v.get_value(env, account, decrypt)
+                if value:
                     envars[v.name] = value
 
         return envars

@@ -367,3 +367,84 @@ def test_exec(tmp_path):
 
     assert os.environ.get('TEST') == 'test'
     assert os.environ.get('STEST') == 'stest='
+
+
+def test_secrets_only(kms_stub, tmp_path):
+    kms_stub.add_response(
+        'encrypt',
+        service_response={'CiphertextBlob': b'dfghsdghfsd'}
+    )
+    kms_stub.add_response(
+        'decrypt',
+        service_response={'KeyId': 'STEST', 'Plaintext': b'stest', 'EncryptionAlgorithm': 'SYMMETRIC_DEFAULT'}
+    )
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST=test',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+    args = type('Args', (object,), {
+        'variable': 'STEST=stest',
+        'secret': True,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+
+    ret = envars.process(
+        filename=f'{tmp_path}/envars.yml',
+        account=None,
+        env='prod',
+        decrypt=True,
+        secrets_only=True,
+    )
+
+    assert ret == ['STEST=stest']
+
+
+def test_secrets_only_yaml(kms_stub, tmp_path):
+    kms_stub.add_response(
+        'encrypt',
+        service_response={'CiphertextBlob': b'dfghsdghfsd'}
+    )
+    kms_stub.add_response(
+        'decrypt',
+        service_response={'KeyId': 'STEST', 'Plaintext': b'stest', 'EncryptionAlgorithm': 'SYMMETRIC_DEFAULT'}
+    )
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST=test',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+    args = type('Args', (object,), {
+        'variable': 'STEST=stest',
+        'secret': True,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+
+    ret = envars.process(
+        filename=f'{tmp_path}/envars.yml',
+        account=None,
+        env='prod',
+        decrypt=True,
+        secrets_only=True,
+        as_yaml=True,
+    )
+
+    assert ret == 'envars:\n  STEST: stest\n'
