@@ -400,8 +400,9 @@ def print_env(args):
 
 
 def process(
-        filename, account, env, var=None, template_var=None,
-        decrypt=False, templating=True, as_yaml=False, quote=False, secrets_only=False):
+        filename, account, env,
+        var=None, template_var=None, decrypt=False,
+        templating=True, as_yaml=False, quote=False, secrets_only=False):
 
     envars = EnVars(filename)
     envars.load()
