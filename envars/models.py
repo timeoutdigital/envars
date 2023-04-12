@@ -210,7 +210,7 @@ class EnVars:
             if v.name == var:
                 return {v.name: v.get_value(env, account, fetch_pstore=True)}
 
-    def build_env(self, env, account, decrypt=False, template_vars=None, no_templating=False):
+    def build_env(self, env, account, decrypt=False, template_vars=None, templating=True):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
         if env != 'default' and env not in self.envs:
@@ -228,7 +228,7 @@ class EnVars:
         jenv = jinja2.Environment()
 
         # process jinja templates
-        if not no_templating:
+        if templating:
             for var in envars:
                 envars[var] = jenv.from_string(envars[var]).render(template_vars)
 
