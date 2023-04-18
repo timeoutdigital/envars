@@ -82,6 +82,8 @@ class EnVar:
                 from .ssm import SsmAgent
                 ssm_agent = SsmAgent()
                 pname = value.split(':')[1]
+                jenv = jinja2.Environment()
+                pname = jenv.from_string(pname).render({'STAGE': env})
                 value = ssm_agent.fetch(pname)
 
         return value
