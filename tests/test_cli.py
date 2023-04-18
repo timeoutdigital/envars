@@ -419,3 +419,29 @@ def test_exec(tmp_path):
 
     assert os.environ.get('TEST') == 'test'
     assert os.environ.get('STEST') == 'stest='
+
+
+def test_var_from_env(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    args = type('Args', (object,), {
+        'variable': 'TEST={{ RELEASE }}',
+        'secret': False,
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'default',
+        'desc': None,
+        'account': None,
+    })
+    envars.add_var(args)
+
+    args = type('Arg', (object,), {
+        'filename': f'{tmp_path}/envars.yml',
+        'env': 'prod',
+        'account': None,
+        'template_var': [],
+        'yaml': False,
+        'decrypt': False,
+        'quote': False
+    })
+    os.environ["RELEASE_SHA"] = '12345'
+    ret = envars.process(args)
+    assert ret == ['TEST=12345']

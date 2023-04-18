@@ -218,7 +218,6 @@ class EnVars:
         if env != 'default' and env not in self.envs:
             raise (Exception(f'Unknown Env: "{env}"'))
 
-        template_vars['STAGE'] = env
         # fetch all the non secret values
         for v in self.envars:
             value = v.get_value(env, account, fetch_pstore=True)
