@@ -245,8 +245,6 @@ def set_systemd_env(args):
     if not args.env:
         print('STAGE=<env> or -e <env> must be supplied')
         sys.exit(1)
-    if 'RELEASE_SHA' in os.environ:
-        args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
     args.var = None
     ret = process(args)
     for val in ret:
@@ -267,8 +265,6 @@ def execute(args):
     if not args.env:
         print('STAGE=<env> or -e <env> must be supplied')
         sys.exit(1)
-    if 'RELEASE_SHA' in os.environ:
-        args.template_var = [f'RELEASE={os.environ.get("RELEASE_SHA")}']
 
     vals = {}
     if args.var:
@@ -367,6 +363,14 @@ def process(args):
         template_vars = {}
         for tvar in flatten(args.template_var):
             template_vars[tvar.split('=')[0]] = tvar.split('=')[1]
+
+        template_vars['STAGE'] = args.env
+        if 'RELEASE_SHA' in os.environ:
+            template_vars['RELEASE'] = os.environ.get('RELEASE_SHA')
+        if 'AWS_REGION' in os.environ:
+            template_vars['AWS_REGION'] = os.environ.get('AWS_REGION')
+        if 'AWS_ACCOUNT_ID' in os.environ:
+            template_vars['AWS_ACCOUNT_ID'] = os.environ.get('AWS_ACCOUNT_ID')
 
         if args.yaml:
             return (
