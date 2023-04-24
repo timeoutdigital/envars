@@ -90,7 +90,7 @@ def test_exec_invalid_stage_fails(tmp_path):
 
 def test_exec_invalid_stage_overide(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
-    ret = run_cmd(tmp_path, 'exec -e foo printenv -n')
+    ret = run_cmd(tmp_path, 'exec -e foo -n printenv')
     assert ret.returncode == 0
 
 
