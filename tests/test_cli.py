@@ -70,6 +70,30 @@ def test_add_invalid_stage_fails(tmp_path):
     assert ret.returncode == 1
 
 
+def test_print_invalid_stage_fails(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
+    ret = run_cmd(tmp_path, 'print -e foo')
+    assert ret.returncode == 1
+
+
+def test_print_invalid_stage_override(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
+    ret = run_cmd(tmp_path, 'print -e foo -n')
+    assert ret.returncode == 0
+
+
+def test_exec_invalid_stage_fails(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
+    ret = run_cmd(tmp_path, 'exec -e foo printenv')
+    assert ret.returncode == 1
+
+
+def test_exec_invalid_stage_overide(tmp_path):
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
+    ret = run_cmd(tmp_path, 'exec -e foo -n printenv')
+    assert ret.returncode == 0
+
+
 def test_add_invalid_account_fails(tmp_path):
     run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn a-kms-key-arn')
     ret = run_cmd(tmp_path, 'add -a foo TEST=test')
@@ -104,7 +128,8 @@ def test_eqauls_in_value(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -139,7 +164,8 @@ def test_two_env_vars_returned(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -174,7 +200,8 @@ def test_template_var(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -200,7 +227,8 @@ def test_extra_template_passing(tmp_path):
         'yaml': False,
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -246,7 +274,8 @@ def test_yaml_print_env(tmp_path):
         'yaml': True,
         'decrypt': True,
         'template_var': ['RELEASE=12324523523523525234523523'],
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -279,7 +308,8 @@ def test_secret(kms_stub, tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': True,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
 
@@ -310,7 +340,8 @@ def test_parameter_store_value(ssm_stub, tmp_path):
         'template_var': ['RELEASE=1234'],
         'yaml': False,
         'decrypt': False,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
     assert ret == ['PTEST=1234']
@@ -340,7 +371,8 @@ def test_stage_template_parameter_store_value(ssm_stub, tmp_path):
         'template_var': ['RELEASE=1234'],
         'yaml': False,
         'decrypt': False,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     ret = envars.process(args)
     assert ret == ['PTEST=1234']
@@ -412,7 +444,8 @@ def test_exec(tmp_path):
         'filename': f'{tmp_path}/envars.yml',
         'var': None,
         'template_var': [],
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     envars.os.execlp = MagicMock()
     envars.execute(args)
@@ -440,7 +473,8 @@ def test_var_from_env(tmp_path):
         'template_var': [],
         'yaml': False,
         'decrypt': False,
-        'quote': False
+        'quote': False,
+        'no_check_env': False,
     })
     os.environ["RELEASE_SHA"] = '12345'
     ret = envars.process(args)

@@ -121,6 +121,11 @@ def main():
         required=False,
     )
     parser_print.add_argument(
+        '-n',
+        '--no_check_env',
+        action='store_true',
+    )
+    parser_print.add_argument(
         '-t',
         '--template-var',
         required=False,
@@ -162,6 +167,11 @@ def main():
         required=False,
     )
     parser_exec.add_argument(
+        '-n',
+        '--no_check_env',
+        action='store_true',
+    )
+    parser_exec.add_argument(
         '-v',
         '--var',
         required=False,
@@ -195,6 +205,11 @@ def main():
         '-e',
         '--env',
         required=False,
+    )
+    parser_set_systemd_env.add_argument(
+        '-n',
+        '--no_check_env',
+        action='store_true',
     )
     parser_set_systemd_env.add_argument(
         '-v',
@@ -351,8 +366,11 @@ def print_env(args):
 
 
 def process(args):
+    check_env = True if args.no_check_env is False else False
     envars = EnVars(args.filename)
     envars.load()
+    if check_env and args.env and args.env not in envars.envs:
+        raise (Exception(f'Unknown Env: "{args.env}"'))
 
     if args.account is None:
         account = get_account()

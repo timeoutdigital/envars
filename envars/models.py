@@ -215,8 +215,6 @@ class EnVars:
     def build_env(self, env, account, decrypt=False, template_vars=None):
         logging.debug(f'build_env({env}, {account})')
         envars = {}
-        if env != 'default' and env not in self.envs:
-            raise (Exception(f'Unknown Env: "{env}"'))
 
         # fetch all the non secret values
         for v in self.envars:
