@@ -74,7 +74,7 @@ To print the variables for a specific environment
 $ envars print --decrypt --env prod
 ```
 
-Loading a var from parameter store at runtime
+Loading a var from **parameter** store at runtime
 ---------------------------------------------
 
 ```
@@ -91,12 +91,6 @@ You may want to add a new enviroment variable to your databox for testing and th
 To do this:\
 1. Navigate to the beetle folder
 2. Run ```envars add VAR_NAME=value -s```
-3. One the above line is ran, the terminal will print the secret to the variable like below:
-
-```
-default: !secret |-
-      AQICAHiOrkzo4U0Qe3l3gBab8dyFfpnlamupaQ8EuHEULsA6uwGWjI8fnd7xt
-```
-
-4. Copy and paste this into the envars.yml file and include it in your PR.
-5. For the new variable to be added in your databox, restart your containers.
+3. One the above line is ran, the new enviroment variable will be added to the envars.yml file.
+4. For the new variable to be added in your databox, restart your containers.\
+`beetle$ invoke restart`
