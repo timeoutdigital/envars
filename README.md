@@ -91,6 +91,6 @@ You may want to add a new enviroment variable to your databox for testing and th
 To do this:\
 1. Navigate to the beetle folder
 2. Run ```envars add VAR_NAME=value -s```
-3. One the above line is ran, the new enviroment variable will be added to the envars.yml file.
+3. Once the above command is run, the new environment variable will be added to the envars.yml file.
 4. For the new variable to be added in your databox, restart your containers.\
 `beetle$ invoke restart`
