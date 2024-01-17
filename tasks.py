@@ -1,7 +1,5 @@
 from invoke import task
 
-APP_NAME = 'envars'
-
 
 @task
 def test(c):
