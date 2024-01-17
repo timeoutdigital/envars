@@ -27,8 +27,12 @@ $ cd envars
 
 Initialise
 
+Install [Timeout Tools](https://github.com/timeoutdigital/timeout-tools/blob/master/README.md)
+
+the run
+
 ```
-$ invoke python
+timeout-tools python-setup
 ```
 
 Test
