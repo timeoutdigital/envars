@@ -27,20 +27,30 @@ $ cd envars
 
 Initialise
 
+Install [Timeout Tools](https://github.com/timeoutdigital/timeout-tools/blob/master/README.md)
+
+the run
+
 ```
-$ make python
+timeout-tools python-setup
 ```
 
 Test
 
 ```
-$ make test
+$ invoke test
 ```
 
 Run
 
 ```
 $ python -m envars.envars
+```
+
+To list invoke options
+
+```
+invoke --list
 ```
 
 ## Usage
