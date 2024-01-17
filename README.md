@@ -28,19 +28,25 @@ $ cd envars
 Initialise
 
 ```
-$ make python
+$ invoke python
 ```
 
 Test
 
 ```
-$ make test
+$ invoke test
 ```
 
 Run
 
 ```
 $ python -m envars.envars
+```
+
+To list invoke options
+
+```
+invoke --list
 ```
 
 ## Usage
