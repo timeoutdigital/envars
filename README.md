@@ -11,7 +11,7 @@ further reading at https://docs.aws.amazon.com/kms/latest/developerguide/create-
 ## Install
 
 ```
-$ pip install git+https://github.com/timeoutdigital/envars@0.6
+$ pip install git+https://github.com/timeoutdigital/envars@1.1
 ```
 
 I may publish to pypi at a later date but sadly the `envars` name is already taken.
