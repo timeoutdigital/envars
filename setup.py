@@ -19,9 +19,6 @@ setup(
         'boto3',
         'jinja2',
     ],
-    extra_require={
-        'dev': ["pytest"],
-    },
     entry_points={
         'console_scripts': [
             'envars = envars.envars:main'
