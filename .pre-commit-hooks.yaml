@@ -7,3 +7,4 @@
   files: ^envars\.yml$
   require_serial: true
   additional_dependencies: []
+  pass_filenames: false
