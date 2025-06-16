@@ -26,4 +26,3 @@ repos:
     - flake8-comprehensions
     - flake8-tidy-imports
     - flake8-typing-imports
-    
