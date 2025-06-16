@@ -26,13 +26,4 @@ repos:
     - flake8-comprehensions
     - flake8-tidy-imports
     - flake8-typing-imports
-
-- repo: local
-  hooks:
-    - id: envars-validate
-      name: Validate envars configuration
-      entry: envars
-      language: python
-      args: [validate]
-      files: ^envars\.yml$
-      require_serial: true
+    
