@@ -479,3 +479,289 @@ def test_var_from_env(tmp_path):
     os.environ["RELEASE_SHA"] = '12345'
     ret = envars.process(args)
     assert ret == ['TEST=12345']
+
+
+def test_validate_success(tmp_path):
+    """test valid configuration is successful"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+    run_cmd(tmp_path, 'add TEST_VAR=test')
+    run_cmd(tmp_path, 'add -e prod PROD_VAR=prod-value')
+    run_cmd(tmp_path, 'add -e staging -a master STAGING_VAR=staging-master')
+
+    ret = run_cmd(tmp_path, 'validate')
+    assert ret.returncode == 0
+
+
+def test_validate_lowercase_var_fails(tmp_path):
+    """test lowercase variable names"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  test_var:
+    default: value
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert 'var name "test_var" is not uppercase' in ret.stdout
+
+
+def test_validate_mixed_case_var_fails(tmp_path):
+    """test mixed case variable names"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TestVar:
+    default: value
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert 'var name "TestVar" is not uppercase' in ret.stdout
+
+
+def test_validate_unknown_env_fails(tmp_path):
+    """test unkown environment fails validation"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TEST_VAR:
+    default: value
+    development: dev-value
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert '"TEST_VAR" has unknown env "development"' in ret.stdout
+
+
+def test_validate_empty_string_fails(tmp_path):
+    """test empty string validation failure"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TEST_VAR:
+    default: ""
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert '"TEST_VAR" "default" has unsupported empty string' in ret.stdout
+
+
+def test_validate_empty_string_in_account_fails(tmp_path):
+    """test account specific configs with empty strings"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TEST_VAR:
+    prod:
+      master: ""
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert '"TEST_VAR" "prod" "master" has unsupported empty string' in ret.stdout
+
+
+def test_validate_invalid_account_fails(tmp_path):
+    """test invalid account names"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TEST_VAR:
+    prod:
+      production: prod-value
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert '"TEST_VAR" "prod" has invalid account "production"' in ret.stdout
+
+
+def test_validate_multiple_errors(tmp_path):
+    """Test if we get multiple validation reports"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  test_var:
+    default: value
+  VALID_VAR:
+    default: valid
+    invalid_env: value
+  ANOTHER_VAR:
+    prod:
+      invalid_account: value
+""")
+
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/envars.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
+    assert 'var name "test_var" is not uppercase' in ret.stdout
+    assert '"VALID_VAR" has unknown env "invalid_env"' in ret.stdout
+    assert '"ANOTHER_VAR" "prod" has invalid account "invalid_account"' in ret.stdout
+
+
+def test_validate_with_description(tmp_path):
+    """test valid description field"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  TEST_VAR:
+    default: value
+    description: This is a test variable
+""")
+
+    ret = run_cmd(tmp_path, 'validate')
+    assert ret.returncode == 0
+
+
+def test_validate_complex_valid_config(tmp_path):
+    """test validation with a more complex file"""
+    run_cmd(tmp_path, 'init --app testapp --environments prod,staging,dev --kms-key-arn abc')
+
+    with open(f'{tmp_path}/envars.yml', 'w') as f:
+        f.write("""configuration:
+  APP: testapp
+  ENVIRONMENTS:
+  - prod
+  - staging
+  - dev
+  KMS_KEY_ARN: abc
+
+environment_variables:
+  API_KEY:
+    default: default-key
+    description: API key for external service
+
+  DATABASE_URL:
+    dev: dev-db-url
+    staging: staging-db-url
+    prod:
+      master: prod-master-db-url
+      sandbox: prod-sandbox-db-url
+
+  FEATURE_FLAG_1:
+    default: "false"
+    prod: "true"
+
+  MULTI_ACCOUNT_VAR:
+    default:
+      master: default-master
+      sandbox: default-sandbox
+    staging:
+      master: staging-master
+      sandbox: staging-sandbox
+""")
+
+    ret = run_cmd(tmp_path, 'validate')
+    assert ret.returncode == 0
+
+
+def test_validate_nonexistent_file(tmp_path):
+    """Test validation fails gracefully when file doesn't exist"""
+    ret = subprocess.run(
+        f'{CMD} -f {tmp_path}/nonexistent.yml validate',
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    assert ret.returncode == 1
